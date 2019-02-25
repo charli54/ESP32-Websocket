@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ESP32 WebSocket Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="http://code.jquery.com/jquery-latest.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
+    <script type="text/javascript">
+	
+		var WebSocket_connection;
+		var dataId = 1;
+		
+	    if (!"WebSocket" in window){  
+			alert("WebSocket NOT supported by your Browser!");
+			$('#WebSocket_State').text("WebSocket NOT supported by your Browser!");			
+		}
+		
+		window.onbeforeunload = function() {
+			websocket.onclose = function () {}; // disable onclose handler first
+			websocket.close()
+		};
+				
+		function connect(){
+			WebSocket_connection = new WebSocket($('#websocket_address').val());
+
+			$('#WebSocket_State').text("Connecting");
+			
+			WebSocket_connection.onopen = function(){
+			  $('#WebSocket_State').html('WebSocket Server Connected : <input type="text" id="websocket_message" value="Data to be send"/><input type="button" value="Send Data" onclick="WebSocketSend()"><input type="button" value="Close" onclick="WebSocketClose()">');
+			};
+		   
+			WebSocket_connection.onmessage = function (evt) { 
+				//read data and append it to output_div
+				var data = evt.data;
+				arr = data.split(",");
+				$( "#output_div_" + dataId ).append( data + "<br>" );
+				$( "#time_value").val(arr[0]);
+				$( "#voltage_value").val(arr[1]);
+				$( "#speed_value").val(arr[2]);
+				$( "#current_value").val(arr[3]);
+			};
+
+			WebSocket_connection.onerror = function()
+			{
+				$('#WebSocket_State').text("Error,...  connection closed");
+			};
+			
+			WebSocket_connection.onclose = function()
+			{ 
+				$('#WebSocket_State').html('WebSocket Server Disconnected : <input type="text" id="websocket_address" value="ws://192.168.4.1:9998"/><input type="button" value="Connect" onclick="connect()">');
+			};
+		}
+			
+		function start(){
+			WebSocket_connection.send("start");
+        }
+
+		function stop(){
+			WebSocket_connection.send("stop");
+        }
+
+        function WebSocketSend(){
+			WebSocket_connection.send($('#websocket_message').val());
+        }
+		
+		function WebSocketClose(){
+			WebSocket_connection.close();
+		}
+
+		function clearData(){
+			$( "#output_div_" + dataId).html("Time (s), Voltage (mV), Vitesse (m/s) <br>");
+		}
+		function newData(){
+			dataId++;
+			$( "#dataBox" ).append( '<div id="output_div_' + 2 + '" style="background-color: grey; height:500px; width:350px; overflow-y: auto; float: left;">Time (s), Voltage (mV), Vitesse (m/s), Courrant (A)<br/></div>');
+		}
+      </script>
+		
+   	</head>
+   	<body style="background-color: lightgrey;">
+
+   	<div class="container">
+   	<ul>
+   		<li>
+   	<!-- MENU BAR ***************************************************-->
+   	<nav class="navbar navbar-inverse">
+   		<div class="container-fluid">
+    		<div class="navbar-header">
+   				<a class="navbar-brand">Data Center</a>
+   			</div>  
+   			<ul class="nav navbar-nav">
+   				<li class="active"><a data-toggle="modal" href="#myModal">Parameters <i class="fa fa-cog fa-spin"></i></a></li>
+   				<li class="active"><a href="javascript:connect()">Connect <i class="fa fa-car"></i></a></li>
+   				<li class="active"><a href="javascript:start()">Start <i class="fa fa-car"></i></a></li>
+   				<li class="active"><a href="javascript:stop()">Stop <i class="fa fa-car"></i></a></li>
+   			</ul>
+   			<ul>
+   				hello
+   			</ul>		
+   		</div>
+   </nav>
+   	</li>
+   	<li>
+   <div style="background-color: black; font-style: white;">
+   	hello
+   </div>
+	</li>
+	<div id="WebSocket_State">
+		WebSocket Server Disconnected : 
+		<input type="text" id="websocket_address" value="ws://192.168.4.1:9998"/>
+		<input type="button" value="Connect" onclick="connect()">
+		</div>
+	<br>
+	<div id = receivedValue_div>
+		<input type="text" id="time_value" value="Time"/> s
+		<input type="text" id="voltage_value" value="Voltage"/> mV
+		<input type="text" id="speed_value" value="Speed"/> m/s
+		<input type="text" id="current_value" value="Current"/> A
+	</div>
+	<br>
+		<input type="button" value="Clear last data" onclick="clearData()">
+		<input type="button" value="New data" onclick="newData()">
+
+	<br>
+
+
+	<div id="dataBox">
+		<div id="output_div_1" style="background-color: grey; height:450px; width:400px; overflow-y: auto; float:left; margin-bottom: 50px;">
+			Time (s), Voltage (mV), Vitesse (m/s),  Courrant (A)<br/>
+		</div>
+
+	</div>
+
+  
+
+  <!-- Modal PARAMETERS WINDOW-->
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+    
+      	<!-- Modal content-->
+      	<div class="modal-content">
+        	<!-- CONFIG MENU HEADER -->
+        	<div class="modal-header">
+          		<button type="button" class="close" data-dismiss="modal">&times;</button>
+          		<h4 class="modal-title">Paramaters</h4>
+        	</div>
+        	<!-- CONFIG MENU BODY -->
+        	<div class="modal-body">
+          		<p>IP address of the module
+          		<input type="text" id="websocket_address" value="ws://192.168.4.1:9998"/></p>
+          		<p>Data sampling frequency
+          		<input type="text" id="websocket_address" value="20"/>Hz</p>
+          		<p>Test duration
+          		<input type="text" id="websocket_address" value="10"/>second</p>
+        	</div>
+        	<!-- CONFIG MENU FOOTER -->
+        	<div class="modal-footer">
+        		<button type="button" class="btn btn-default" data-dismiss="modal">Save</button>
+          		<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        	</div>
+      	</div>
+      
+    </div>
+</div>
+</div>
+</body>
+</html>
